@@ -105,6 +105,8 @@ pub async fn start_subscription(
                 }
             }
         }
+
+        client.disconnect().await?;
     }
 }
 
