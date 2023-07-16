@@ -161,7 +161,7 @@ async fn handle_request(
     let fwd_event = create_nwc_request(&nwc, req.params.invoice);
 
     client
-        .send_event_to(nwc.relay_url, fwd_event.clone())
+        .send_event_to(nwc.relay_url.to_string(), fwd_event.clone())
         .await?;
 
     println!("Sent event to {}", nwc.relay_url);
