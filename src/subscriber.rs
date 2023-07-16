@@ -94,7 +94,7 @@ pub async fn start_subscription(
                                     }
                                 });
                             }
-                            kind => println!("Received even with invalid kind: {:?}", kind)
+                            kind => println!("Received event with invalid kind: {kind:?}")
                         }
                     }
                 }
