@@ -84,6 +84,15 @@ impl UserNwc {
         Ok(found)
     }
 
+    pub fn get_relays(conn: &mut SqliteConnection) -> Result<Vec<String>, diesel::result::Error> {
+        let found = user_nwc::table
+            .select(user_nwc::relay_url)
+            .distinct()
+            .load::<String>(conn)?;
+
+        Ok(found)
+    }
+
     pub fn get_all_keys(
         conn: &mut SqliteConnection,
     ) -> Result<Vec<XOnlyPublicKey>, diesel::result::Error> {

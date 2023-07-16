@@ -11,6 +11,8 @@ use serde::{Deserialize, Serialize};
 
 use super::schema::service_nwc;
 
+pub const DEFAULT_SERVICE_RELAY: &str = "wss://relay.damus.io";
+
 #[derive(Queryable, Insertable, AsChangeset, Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[diesel(primary_key(request_key))]
 #[diesel(table_name = service_nwc)]
@@ -31,7 +33,7 @@ impl ServiceNwc {
         ServiceNwc {
             request_key: request_key.public_key().to_hex(),
             response_key: response_key.secret_key().unwrap().secret_bytes().to_hex(),
-            relay_url: "wss://relay.damus.io".to_string(),
+            relay_url: DEFAULT_SERVICE_RELAY.to_string(),
             service_name,
             user_pubkey: user_pubkey.to_hex(),
             date_created: chrono::Utc::now().naive_utc().to_string(),

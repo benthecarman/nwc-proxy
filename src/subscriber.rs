@@ -1,4 +1,4 @@
-use crate::models::service_nwc::ServiceNwc;
+use crate::models::service_nwc::{ServiceNwc, DEFAULT_SERVICE_RELAY};
 use crate::models::user_nwc::UserNwc;
 use anyhow::anyhow;
 use diesel::r2d2::{ConnectionManager, Pool};
@@ -18,18 +18,17 @@ pub async fn start_subscription(
     let keys = Keys::generate();
     loop {
         let client = Client::new(&keys);
-        // todo get relays from db
-        client.add_relay("wss://nostr.wine", None).await?;
-        client.add_relay("wss://nos.lol", None).await?;
-        client.add_relay("wss://nostr.fmt.wiz.biz", None).await?;
-        client.add_relay("wss://nostr.zebedee.cloud", None).await?;
-        client
-            .add_relay("wss://nostr.mutinywallet.com", None)
-            .await?;
-        client.add_relay("wss://relay.damus.io", None).await?;
+
+        let db_relays = {
+            let db = &mut db_pool.get()?;
+            let relays = UserNwc::get_relays(db)?;
+
+            relays.into_iter().map(|r| (r, None)).collect::<Vec<_>>()
+        };
+        client.add_relays(db_relays).await?;
+        client.add_relay(DEFAULT_SERVICE_RELAY, None).await?;
         client.connect().await;
 
-        // todo listen for new relays
         let keys: Vec<XOnlyPublicKey> = rx.borrow().clone();
         let authors: Vec<String> = keys.iter().map(|k| k.to_string()).collect();
 
