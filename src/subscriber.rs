@@ -30,7 +30,6 @@ pub async fn start_subscription(
         client.connect().await;
 
         // todo listen for new relays
-        // todo listen for service p tags
         let keys: Vec<XOnlyPublicKey> = rx.borrow().clone();
         let authors: Vec<String> = keys.iter().map(|k| k.to_string()).collect();
 

@@ -3,6 +3,7 @@ use std::str::FromStr;
 use bitcoin::hashes::hex::ToHex;
 use bitcoin::secp256k1::PublicKey;
 use diesel::prelude::*;
+use diesel::result::Error::DeserializationError;
 use nostr::key::{SecretKey, XOnlyPublicKey};
 use nostr::nips::nip47::NostrWalletConnectURI;
 use serde::{Deserialize, Serialize};
@@ -81,5 +82,22 @@ impl UserNwc {
             .load::<Self>(conn)?;
 
         Ok(found)
+    }
+
+    pub fn get_all_keys(
+        conn: &mut SqliteConnection,
+    ) -> Result<Vec<XOnlyPublicKey>, diesel::result::Error> {
+        let found = user_nwc::table
+            .select(user_nwc::request_key)
+            .load::<String>(conn)?;
+
+        let mut keys = vec![];
+        for str in found {
+            let key =
+                XOnlyPublicKey::from_str(&str).map_err(|e| DeserializationError(Box::new(e)))?;
+            keys.push(key);
+        }
+
+        Ok(keys)
     }
 }

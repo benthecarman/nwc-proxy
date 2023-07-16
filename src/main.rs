@@ -17,6 +17,7 @@ use tower_http::cors::{Any, CorsLayer};
 
 use crate::config::*;
 use crate::models::service_nwc::ServiceNwc;
+use crate::models::user_nwc::UserNwc;
 use crate::models::MIGRATIONS;
 use crate::routes::*;
 
@@ -65,8 +66,13 @@ async fn main() -> anyhow::Result<()> {
             .run_pending_migrations(MIGRATIONS)
             .expect("migrations could not run");
 
-        // todo get keys from UserNwc too
-        ServiceNwc::get_all_keys(connection)?
+        let service_keys = ServiceNwc::get_all_keys(connection)?;
+        let user_keys = UserNwc::get_all_keys(connection)?;
+
+        let mut keys = Vec::with_capacity(service_keys.len() + user_keys.len());
+        keys.extend(service_keys);
+        keys.extend(user_keys);
+        keys
     };
 
     let (tx, rx) = watch::channel(start);
