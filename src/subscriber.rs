@@ -5,7 +5,7 @@ use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::SqliteConnection;
 use nostr::key::XOnlyPublicKey;
 use nostr::nips::nip47::{Method, NostrWalletConnectURI, Request, RequestParams};
-use nostr::prelude::{decrypt, encrypt, Secp256k1};
+use nostr::prelude::{decrypt, encrypt, PayInvoiceRequestParams, Secp256k1};
 use nostr::{Event, EventBuilder, Filter, Keys, Kind, Tag, Timestamp};
 use nostr_sdk::{Client, RelayPoolNotification};
 use std::time::Duration;
@@ -158,10 +158,18 @@ async fn handle_request(
         vec.first().cloned().ok_or(anyhow!("No user nwc found"))?
     };
     let nwc = user_nwc.nwc_uri();
-    let fwd_event = create_nwc_request(&nwc, req.params.invoice);
+
+    let invoice = match req.params {
+        RequestParams::PayInvoice(params) => params.invoice,
+        RequestParams::MakeInvoice(_) => return Ok(None),
+        RequestParams::LookupInvoice(_) => return Ok(None),
+        RequestParams::GetBalance => return Ok(None),
+    };
+
+    let fwd_event = create_nwc_request(&nwc, invoice);
 
     client
-        .send_event_to(nwc.relay_url.to_string(), fwd_event.clone())
+        .send_event_to(nwc.relay_url.as_str(), fwd_event.clone())
         .await?;
 
     println!("Sent event to {}", nwc.relay_url);
@@ -184,7 +192,7 @@ async fn handle_response(
 fn create_nwc_request(nwc: &NostrWalletConnectURI, invoice: String) -> Event {
     let req = Request {
         method: Method::PayInvoice,
-        params: RequestParams { invoice },
+        params: RequestParams::PayInvoice(PayInvoiceRequestParams { invoice }),
     };
 
     let encrypted = encrypt(&nwc.secret, &nwc.public_key, req.as_json()).unwrap();
